@@ -163,10 +163,45 @@
             alert(msg);
         }
 
+        function load_database(){
+            // 変数 mind に json 化した データベースのデータを読み込む
+            var mind = {
+                "meta":{
+                    "name":"demo",
+                    "author":"hizzgdev@163.com",
+                    "version":"0.2",
+                },
+                "format":"node_array",
+                "data":[
+                    {"id":"root", "isroot":true, "topic":"jsMind"},
+
+                    {"id":"sub11", "parentid":"sub1", "topic":"sub11"},
+                    {"id":"sub12", "parentid":"sub1", "topic":"sub12"},
+                    {"id":"sub13", "parentid":"sub1", "topic":"sub13"},
+
+                    {"id":"sub2", "parentid":"root", "topic":"sub2"},
+                    {"id":"sub21", "parentid":"sub2", "topic":"sub21"},
+
+                    {"id":"sub3", "parentid":"root", "topic":"sub3"},
+                ]
+            };
+            var options = {
+                container:'jsmind_container',
+                editable:true,
+                theme:'greensea'
+            }
+            var jm = jsMind.show(options,mind);
+        }
+
 
 
         // Web サイトを読み込んだときに実行する
-        open_empty();
+
+        // データベースから受け取ったデータを開く
+        load_database();
+        // データベースにデータがなければ空のマインドマップを開く
+        // open_empty();
+
     </script>
 </body>
 
