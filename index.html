@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>jsMind</title>
+    <link type="text/css" rel="stylesheet" href="style/jsmind.css" />
+    <!-- 自分自身の設定を書く CSS ファイル -->
+    <link type="text/css" rel="stylesheet" href="style/custom.css" />
+</head>
+
+<body>
+    <!-- jsMind 本体 -->
+    <div id="jsmind">
+        <!-- 左側のナビゲーション -->
+        <div id="jsmind_nav">
+            <ol>
+                <li><button onclick="screen_shot();">screenshot</button></li>
+                <li><button onclick="add_node();">add a node</button></li>
+                <li><button onclick="remove_node();">remove node</button></li>
+
+                <li>zoom</li>
+                <button id="zoom-in-button" style="width:50px" onclick="zoomIn();">In</button>
+                <button id="zoom-out-button" style="width:50px" onclick="zoomOut();">Out</button>
+                <li>node_tree(default)</li>
+                <li><button class="sub" onclick="show_data();">show data</button></li>
+                <li><button class="sub" onclick="save_file();">save file</button></li>
+                <li><input id="file_input" class="file_input" type="file" /></li>
+                <li><button class="sub" onclick="open_file();">open file</button></li>
+            </ol>
+        </div>
+
+        <!-- マインドマップ本体 -->
+        <div id="jsmind_container"></div>
+
+        <!-- ファイルを選択するときに呼び出される input タグ -->
+        <div style="display:none">
+            <input class="file" type="file" id="image-chooser" accept="image/*" />
+        </div>
+
+    </div>
+
+    <!-- jsMind に必要なファイルを読み込む -->
+    <script type="text/javascript" src="js/jsmind.js"></script>
+    <script type="text/javascript" src="js/jsmind.draggable.js"></script>
+    <script type="text/javascript" src="js/jsmind.screenshot.js"></script>
+
+    <!-- ボタン操作時の処理 -->
+    <script type="text/javascript">
+        var _jm = null;
+
+        function open_empty() {
+            var options = {
+                container: 'jsmind_container',
+                theme: 'greensea',
+                editable: true
+            }
+            _jm = jsMind.show(options);
+        }
+
+        function screen_shot() {
+            _jm.screenshot.shootDownload();
+        }
+
+        function show_data() {
+            var mind_data = _jm.get_data();
+            var mind_string = jsMind.util.json.json2string(mind_data);
+            prompt_info(mind_string);
+        }
+
+        // データをサーバに POST する
+        function upload_data() {
+            var mind_data = _jm.get_data();
+            var mind_string = jsMind.util.json.json2string(mind_data);
+            var xhr = new XMLHttpRequest();
+            // 2 番目の引数に POST 先の URL を指定する
+            xhr.open('POST', '/', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+            xhr.send('data=' + mind_string);
+        }
+
+        function save_file() {
+            var mind_data = _jm.get_data();
+            var mind_name = mind_data.meta.name;
+            var mind_str = jsMind.util.json.json2string(mind_data);
+            jsMind.util.file.save(mind_str, 'text/jsmind', mind_name + '.json');
+        }
+
+        function open_file() {
+            var file_input = document.getElementById('file_input');
+            var files = file_input.files;
+            if (files.length > 0) {
+                var file_data = files[0];
+                jsMind.util.file.read(file_data, function (jsmind_data, jsmind_name) {
+                    var mind = jsMind.util.json.string2json(jsmind_data);
+                    if (!!mind) {
+                        _jm.show(mind);
+                    } else {
+                        prompt_info('can not open this file as mindmap');
+                    }
+                });
+            } else {
+                prompt_info('please choose a file first')
+            }
+            // upload_data();
+        }
+
+        function get_selected_nodeid() {
+            var selected_node = _jm.get_selected_node();
+            if (!!selected_node) {
+                return selected_node.id;
+            } else {
+                return null;
+            }
+        }
+
+        function add_node() {
+            var selected_node = _jm.get_selected_node();
+            if (!selected_node) {
+                prompt_info('please select a node first.');
+                return;
+            }
+
+            var nodeid = jsMind.util.uuid.newid();
+            var topic = '* Node_' + nodeid.substr(nodeid.length - 6) + ' *';
+            var node = _jm.add_node(selected_node, nodeid, topic);
+
+            // upload_data();
+        }
+
+        function remove_node() {
+            var selected_id = get_selected_nodeid();
+            if (!selected_id) {
+                prompt_info('please select a node first.');
+                return;
+            }
+
+            _jm.remove_node(selected_id);
+
+            // upload_data();
+        }
+
+        var zoomInButton = document.getElementById("zoom-in-button");
+        var zoomOutButton = document.getElementById("zoom-out-button");
+
+        function zoomIn() {
+            if (_jm.view.zoomIn()) {
+                zoomOutButton.disabled = false;
+            } else {
+                zoomInButton.disabled = true;
+            };
+        };
+
+        function zoomOut() {
+            if (_jm.view.zoomOut()) {
+                zoomInButton.disabled = false;
+            } else {
+                zoomOutButton.disabled = true;
+            };
+        };
+
+        function prompt_info(msg) {
+            alert(msg);
+        }
+
+
+
+        // Web サイトを読み込んだときに実行する
+        open_empty();
+    </script>
+</body>
+
+</html>
